@@ -1,21 +1,52 @@
-name: security
+name: Scan Nosia
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 12 * * *" # Tous les jours à midi. Dans l'ordre : minute (0-59) -heure (0-23) -jour du mois (1-31) -mois (1-12) -jour de la semaine (0-6 (dimanche=0))
+  push:
+    branches:
+      - main
+  pull_request:
 jobs:
-  security:
-    name: audit node
-    runs-on: ubuntu-26.04
+  scan-nosia-image:
+    name: Scan Nosia image
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - name: Run Trivy scanner without cache
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          scan-type: "fs"
-          scan-ref: "."
-          cache: "false"
-      - name: Run compose
-        run: docker compose -f docker-compose.yml up -d
-      - name: Run trivy
-        run: trivy image dilolabs/nosia:latest && trivy image caddy:latest && trivy image pgvector/pgvector:pg16
+          image-ref: "dilolabs/nosia:latest"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+  scan-caddy-image:
+    name: Scan Caddy image
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: "caddy:latest"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+  scan-pgvector-image:
+    name: Scan pgvector image
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: "pgvector/pgvector:pg16"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
